@@ -1,0 +1,1 @@
+{'username': 'sun', 'caught_fish': [('À×¾î', 68), ('À×¾î', 103), ('³­ÁÖ', 11), ('±ÝºØ¾î', 34), ('Åö´«±ÝºØ¾î', 22)], 'current_date': '2050-09-01', 'total_money': 1014148.0, 'trophy_displayed': True, 'ending': True}

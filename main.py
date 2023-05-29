@@ -8,11 +8,13 @@ from tkinter import Tk, Canvas, NW, font, Toplevel, messagebox, simpledialog  # 
 from PIL import Image, ImageTk  # 파이썬 이미징 라이브러리(tkinter에서 이미지를 띄우기 위해서 사용)
 from dateutil.relativedelta import relativedelta  # 달 계산을 위해서 relativedelta 사용. (1달씩 계산하려면 필요)
 
+
 # 물고기 떡밥 클래스 정의
 class FishFood:
     def __init__(self, name, prob):
         self.name = name  # 떡밥 이름
         self.prob = prob  # 각 떡밥마다 줄 확률 가중치 설정 (떡밥 랜덤 설정 기능 추가 시 사용 예정)
+
 
 # 물고기 클래스 정의
 class Fish:
@@ -29,6 +31,7 @@ class Fish:
         self.b_prob = b_prob  # 물고기찌 선호도
         self.c_prob = c_prob  # 옥수수전분 선호도
 
+
 # GUI 화면 클래스 정의
 class FishingGUI:
     def __init__(self, master):
@@ -42,6 +45,7 @@ class FishingGUI:
         self.date_display = None  # 날짜 디스플레이
         self.money_display = None  # 돈 디스플레이
         self.fishfood_display = None  # 떡밥 종류 디스플레이
+        self.fish_display = None  # 마지막으로 잡은 물고기 디스플레이
         self.ending_video_played = False  # 엔딩 영상이 재생되었는지 여부 체크
 
         # 도감 관련 설정
@@ -54,6 +58,7 @@ class FishingGUI:
         # 게임 플레이 관련 변수
         self.current_date = datetime(2023, 1, 1)  # 초기 날짜 설정
         self.caught_fish = []  # 잡은 물고기를 저장할 리스트
+        self.fish_display_list = [(0, 0)]  # 잡은 물고기를 저장할 리스트(GUI 출력용)
         self.user_data = {}  # 유저 데이터를 저장할 딕셔너리
         self.total_money = 0  # 초기 돈 설정
         self.fish_food_list = self.create_fish_food_list()  # 떡밥 종류 리스트 생성
@@ -62,6 +67,10 @@ class FishingGUI:
         self.last_click = None  # 마지막 마우스 클릭이 들어왔던 시간을 저장 (낚시 성공 여부 판별)
         self.click_allowed = False  # 클릭을 허용할 지 여부
 
+
+
+
+    # =========== 게임 시작 메시지 창 GUI ============
     # 새 게임 불러올 지 체크
     def show_initial_screen(self):
         choice = messagebox.askyesno("모여봐요 인하의 숲", "새 게임을 시작하시겠습니까?")  # 선택 창 띄우기
@@ -86,11 +95,12 @@ class FishingGUI:
                     self.start_new_game()
                 else:
                     # 중복되는 이름이 없다면 user_data를 생성 / 유저 이름, 잡은 물고기 정보, 돈, 트로피 노출여부(업적), 엔딩 달성여부
-                    self.user_data = {"username": username, "caught_fish": [], "total_money": 0, "trophy_displayed": False, "ending": False}
+                    self.user_data = {"username": username, "caught_fish": [], "total_money": 0,
+                                      "trophy_displayed": False, "ending": False}
                     self.unbind_events()  # 입력 이벤트 안 받도록 함
-                    self.play_video(self.video5)   # 인트로 동영상 재생
+                    self.play_video(self.video5)  # 인트로 동영상 재생
                     self.bind_events()  # 다시 입력 이벤트 허용
-                    self.start()   # 게임 시작
+                    self.start()  # 게임 시작
                     self.update_display()  # 디스플레이 업데이트
             else:
                 messagebox.showerror("모여봐요 인하의 숲", "사용자 이름을 입력해야 합니다.")  # 사용자 이름을 아무것도 입력하지 않을 경우
@@ -110,7 +120,8 @@ class FishingGUI:
                     self.user_data = eval(data)  # 파일에서 읽은 데이터를 딕셔너리로 변환
                     self.caught_fish = self.user_data.get("caught_fish", [])  # 잡은 물고기 정보를 가져옴
                     self.total_money = self.user_data.get("total_money", 0)  # 돈 정보를 가져옴
-                    self.current_date = datetime.strptime(self.user_data.get("current_date", "2023-01-01"),"%Y-%m-%d")  # 현재 날짜를 가져옴
+                    self.current_date = datetime.strptime(self.user_data.get("current_date", "2023-01-01"),
+                                                          "%Y-%m-%d")  # 현재 날짜를 가져옴
                     self.trophy_displayed = self.user_data.get("trophy_displayed", '')  # 트로피 노출여부를 가져옴
                     self.ending_video_played = self.user_data.get("ending", '')  # 엔딩 달성여부를 가져옴
                     self.update_display()  # 디스플레이 업데이트
@@ -133,6 +144,10 @@ class FishingGUI:
         self.canvas.destroy()  # 메인 gui 창 닫기
         sys.exit()  # 프로그램 종료
 
+
+
+
+    # =========== 유저 데이터 처리 ============
     # 게임 저장
     def save_user_data(self):
         username = self.user_data["username"]
@@ -154,16 +169,20 @@ class FishingGUI:
                 user_data_list.append(user_data)  # 변환된 데이터를 리스트에 추가
         return user_data_list  # 데이터가 추가된 리스트를 return (전체 리스트가 return 됨)
 
+
+
+
+    # =========== 물고기 생성 관련 ============
     # 물고기 떡밥 생성
     def create_fish_food_list(self):
-         # 떡밥의 종류는 갯지렁이, 옥수수전분, 물고기찌 총 세 가지.
-         fish_food_list = [
-             FishFood("갯지렁이", 0.40),  # 뒤에 있는 가중치는 추후 떡밥 랜덤 선택 로직 추가 시 사용예정
-             FishFood("옥수수전분", 0.35),
-             FishFood("물고기찌",  0.25)
-         ]
-         # 생성된 떡밥 리스트를 return
-         return fish_food_list
+        # 떡밥의 종류는 갯지렁이, 옥수수전분, 물고기찌 총 세 가지.
+        fish_food_list = [
+            FishFood("갯지렁이", 0.40),  # 뒤에 있는 가중치는 추후 떡밥 랜덤 선택 로직 추가 시 사용예정
+            FishFood("옥수수전분", 0.35),
+            FishFood("물고기찌", 0.25)
+        ]
+        # 생성된 떡밥 리스트를 return
+        return fish_food_list
 
     # 다음 떡밥 선택 함수
     def select_next_fish_food(self):
@@ -197,7 +216,7 @@ class FishingGUI:
             price = fish.price + fish.plus_money  # 추가금을 전부 더함
         # 물고기 크기가 (최소 크기 + 최대 크기 / 2) 한 값보다 큰 경우
         elif size > (fish.min_size + fish.max_size) / 2:
-            price = fish.price + fish.plus_money / 2 # 추가금을 반만 더함
+            price = fish.price + fish.plus_money / 2  # 추가금을 반만 더함
         # 그 외의 경우 (작은 경우)
         else:
             price = fish.price  # 추가금을 더하지 않음
@@ -229,6 +248,10 @@ class FishingGUI:
         price = self.special_price(fish, size)
         return fish, size, price  # 잡힌 물고기의 종류, 크기, 가격을 결정하여 return
 
+
+
+
+    # =========== 도감 창 GUI ============
     # 도감 창 구현 함수
     def show_fish_catalog(self, event):
         trophy_visible = False  # 트로피 노출 여부 초기화
@@ -309,9 +332,9 @@ class FishingGUI:
             # trophy_visible이 true인 경우
             if trophy_visible:
                 # 트로피 이미지를 삭제한다
-                 catalog_canvas.delete(trophy)
+                catalog_canvas.delete(trophy)
                 # trophy_visible를 False로 만들어준다
-                 trophy_visible = False
+                trophy_visible = False
 
         # 물고기 상세 정보 창 구현
         def show_fish_info(fish):
@@ -356,7 +379,8 @@ class FishingGUI:
         # 도감 메인 창 관련 나머지 로직
         self.catalog_visible = True  # 도감 메인 창이 열려있음을 나타내는 변수 true로 설정
         catalog_canvas.bind('<Button-1>', handle_catalog_click)  # 왼쪽 마우스 클릭 이벤트 바인딩 (트로피 말풍선 클릭 처리 위해)
-        self.catalog_window.protocol("WM_DELETE_WINDOW", lambda: self.close_fish_catalog(event=None))  # 도감 창에서 x 누를 때 close_fish_catalog 함수 호출.
+        self.catalog_window.protocol("WM_DELETE_WINDOW", lambda: self.close_fish_catalog(
+            event=None))  # 도감 창에서 x 누를 때 close_fish_catalog 함수 호출.
         self.catalog_window.bind("b", self.close_fish_catalog)  # 도감 창에서 'b' 키를 누를 때 close_fish_catalog 함수 호출.
         self.catalog_window.bind("B", self.close_fish_catalog)  # 도감 창에서 'B' 키를 누를 때 close_fish_catalog 함수 호출.
         self.catalog_window.mainloop()  # 도감 창 이벤트 루프 실행
@@ -368,6 +392,10 @@ class FishingGUI:
             self.catalog_window = None  # 도감 창 변수 초기화
             self.catalog_visible = False  # 도감 창 노출여부 변수 false
 
+
+
+
+    # =========== 입력 이벤트 처리 ============
     # 입력 이벤트 바인딩(마우스 클릭, 키보드 입력)
     def bind_events(self):
         self.master.bind('<Button-1>', self.on_click)  # 마우스 왼쪽 클릭이 들어올 떄 on_click 함수 호출.
@@ -378,66 +406,12 @@ class FishingGUI:
         self.master.bind('q', self.confirm_exit)  # 'q' 키를 누를 때 confirm_exit 함수 호출. (메인, 도감 창)
         self.master.bind('Q', self.confirm_exit)  # 'Q' 키를 누를 때 confirm_exit 함수 호출.
         self.master.protocol("WM_DELETE_WINDOW", self.exit_program)  # gui에서 x 키를 누를 때 exit_program 함수 호출.
+
     # 입력 이벤트 언바인딩(입력 금지)
     def unbind_events(self):
         self.master.unbind('<Button-1>')  # 마우스 왼쪽 클릭 이벤트 언바인딩
         self.master.unbind('a')  # 'a' 키 이벤트 언바인딩
         self.master.unbind('A')  # 'A' 키 이벤트 언바인딩
-
-    # 디스플레이 업데이트
-    def update_display(self):
-        # 날짜, 떡밥, 돈 디스플레이 업데이트
-        self.update_date_display()
-        self.update_fishfood_display()
-        self.update_money_display()
-
-    def update_money_display(self):
-        # 기존 돈 표시 삭제
-        if self.money_display is not None:
-            self.canvas.delete(self.money_display)
-
-        # 새 돈 표시 추가
-        money_str = int(self.total_money)
-        money_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
-        # 정해진 위치에 텍스트 출력 / format을 이용해 세 자리마다 끊어줌 / 돈 자리수가 늘수록 좌표를 알맞게 조금씩 변경해줌
-        if money_str <= 9:
-            self.money_display = self.canvas.create_text(970, 90, text=money_str, fill="white", anchor="nw", font=money_font)
-        elif money_str <= 99:
-            self.money_display = self.canvas.create_text(965, 90, text=money_str, fill="white", anchor="nw", font=money_font)
-        elif money_str <= 999:
-            self.money_display = self.canvas.create_text(955, 90, text=money_str, fill="white", anchor="nw", font=money_font)
-        elif money_str <= 9999:
-            self.money_display = self.canvas.create_text(945, 90, text=format(money_str, ','), fill="white", anchor="nw", font=money_font)
-        elif money_str <= 99999:
-            self.money_display = self.canvas.create_text(935, 90, text=format(money_str, ','), fill="white", anchor="nw", font=money_font)
-        elif money_str <= 999999:
-            self.money_display = self.canvas.create_text(925, 90, text=format(money_str, ','), fill="white", anchor="nw", font=money_font)
-        else:
-            self.money_display = self.canvas.create_text(915, 90, text=format(money_str, ','), fill="white", anchor="nw", font=money_font)
-    def update_fishfood_display(self):
-        # 기존 떡밥 표시 삭제
-        if self.fishfood_display is not None:
-            self.canvas.delete(self.fishfood_display)
-
-        fishfood_str = self.fish_food_list[self.fish_food_index].name
-        fishfood_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
-        # 정해진 위치에 텍스트 출력 / 옥수수전분만 다섯 글자라 출력 시 약간의 좌표 변경이 필요함
-        if fishfood_str == '옥수수전분':
-            self.fishfood_display = self.canvas.create_text(925, 640, text=fishfood_str, fill="white", anchor="nw", font=fishfood_font)
-        else:
-            self.fishfood_display = self.canvas.create_text(935, 640, text=fishfood_str, fill="white", anchor="nw", font=fishfood_font)
-
-    # 클릭 이벤트 핸들러
-    def update_date_display(self):
-        # 기존 날짜 표시 삭제
-        if self.date_display is not None:
-            self.canvas.delete(self.date_display)
-
-        # 새 날짜 표시 추가
-        date_str = self.current_date.strftime("%Y년\n  %m월")
-        date_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
-        # 정해진 위치에 텍스트 출력 (60, 600)
-        self.date_display = self.canvas.create_text(60, 600, text=date_str, fill="white", anchor="nw", font=date_font)
 
     # 낚시 성공 여부 판단
     # throw-catch 영상 마지막이 물고기가 찌를 무는 장면인데, 영상 마지막 몇 초간(사용자 설정) 클릭이 알맞게 들어오면 true를 반환하도록 한다.
@@ -480,11 +454,15 @@ class FishingGUI:
                 if self.success_check(self.video2, 3):
                     fish_list = self.create_fish_list(self.current_date.month)  # 성공했다면 물고기 리스트 생성
                     # 결정된 물고기 리스트와 떡밥을 이용해서 catch_fish를 호출해 물고기를 잡고, fish, fish_size, fish_price를 반환받는다
-                    fish, fish_size, fish_price = self.catch_fish(fish_list, self.fish_food_list[self.fish_food_index])
+                    fish, fish_size, fish_price = self.catch_fish(fish_list,
+                                                                  self.fish_food_list[self.fish_food_index])
                     self.caught_fish.append((fish.name, fish_size))  # 잡은 물고기의 이름과 크기를 리스트에 추가
-                    fish_video = cv2.VideoCapture(fish.video_file)  # fish.video_file 경로의 물고기 동영상 파일을 fish_video 변수에 담음
+                    fish_video = cv2.VideoCapture(
+                        fish.video_file)  # fish.video_file 경로의 물고기 동영상 파일을 fish_video 변수에 담음
                     self.unbind_events()  # 입력 이벤트 언바인딩(입력 금지)
                     self.play_video(fish_video)  # 해당되는 물고기 동영상 재생
+                    # 출력용 리스트를 따로 만든 이유는 caught_fish를 그대로 쓰면 동영상이 재생되기 전에 GUI에 반영되기 때문
+                    self.fish_display_list.append((fish.name, fish_size))
                     self.total_money += fish_price  # 물고기 가격을 total_money에 더해준다
                 else:
                     self.unbind_events()  # 입력 이벤트 언바인딩(입력 금지)
@@ -508,6 +486,109 @@ class FishingGUI:
             self.save_user_data()  # 유저 데이터 저장
             self.bind_events()  # 입력 이벤트 바인딩
 
+
+
+
+    # =========== 디스플레이 업데이트 ============
+    # 디스플레이 업데이트
+    def update_display(self):
+        # 날짜, 떡밥, 잡은 물고기, 돈 디스플레이 업데이트
+        self.update_date_display()
+        self.update_fishfood_display()
+        self.update_fish_display()
+        self.update_money_display()
+
+    # 잡은 물고기 디스플레이
+    def update_fish_display(self):
+        # 기존 떡밥 표시 삭제
+        if self.fish_display is not None:
+            self.canvas.delete(self.fish_display)
+        fish_name, fish_length = self.fish_display_list[-1]  # 물고기 이름과 길이를 받아온다
+        fish_str = f'{fish_name}, {fish_length}cm'
+        fish_font = font.Font(family="Verdana", size=12, weight="bold")  # 폰트 설정
+        if fish_name != 0 and fish_length != 0:  # 빈 칸일때 예외처리, 문자 길이에 따른 좌표 조절
+            if len(fish_str) == 7:
+                self.fish_display = self.canvas.create_text(940, 185, text=fish_str, fill="white", anchor="nw",
+                                                            font=fish_font)
+            elif len(fish_str) == 8:
+                self.fish_display = self.canvas.create_text(931, 185, text=fish_str, fill="white", anchor="nw",
+                                                            font=fish_font)
+            elif len(fish_str) == 9:
+                self.fish_display = self.canvas.create_text(924, 185, text=fish_str, fill="white", anchor="nw",
+                                                            font=fish_font)
+            elif len(fish_str) == 10:
+                self.fish_display = self.canvas.create_text(918, 185, text=fish_str, fill="white", anchor="nw",
+                                                            font=fish_font)
+            else:
+                self.fish_display = self.canvas.create_text(914, 185, text=fish_str, fill="white", anchor="nw",
+                                                            font=fish_font)
+        else:
+            self.fish_display = self.canvas.create_text(909, 185, text='아직 잡은 물고기가 없다..', fill="white", anchor="nw",
+                                                        font=font.Font(family="Verdana", size=10, weight="bold"))
+
+    # 돈 디스플레이
+    def update_money_display(self):
+        # 기존 돈 표시 삭제
+        if self.money_display is not None:
+            self.canvas.delete(self.money_display)
+
+        # 새 돈 표시 추가
+        money_str = int(self.total_money)
+        money_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        # 정해진 위치에 텍스트 출력 / format을 이용해 세 자리마다 끊어줌 / 돈 자리수가 늘수록 좌표를 알맞게 조금씩 변경해줌
+        if money_str <= 9:
+            self.money_display = self.canvas.create_text(970, 90, text=money_str, fill="white", anchor="nw",
+                                                         font=money_font)
+        elif money_str <= 99:
+            self.money_display = self.canvas.create_text(965, 90, text=money_str, fill="white", anchor="nw",
+                                                         font=money_font)
+        elif money_str <= 999:
+            self.money_display = self.canvas.create_text(955, 90, text=money_str, fill="white", anchor="nw",
+                                                         font=money_font)
+        elif money_str <= 9999:
+            self.money_display = self.canvas.create_text(945, 90, text=format(money_str, ','), fill="white",
+                                                         anchor="nw", font=money_font)
+        elif money_str <= 99999:
+            self.money_display = self.canvas.create_text(935, 90, text=format(money_str, ','), fill="white",
+                                                         anchor="nw", font=money_font)
+        elif money_str <= 999999:
+            self.money_display = self.canvas.create_text(925, 90, text=format(money_str, ','), fill="white",
+                                                         anchor="nw", font=money_font)
+        else:
+            self.money_display = self.canvas.create_text(915, 90, text=format(money_str, ','), fill="white",
+                                                         anchor="nw", font=money_font)
+
+    # 떡밥 디스플레이
+    def update_fishfood_display(self):
+        # 기존 떡밥 표시 삭제
+        if self.fishfood_display is not None:
+            self.canvas.delete(self.fishfood_display)
+        fishfood_str = self.fish_food_list[self.fish_food_index].name
+        fishfood_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        # 정해진 위치에 텍스트 출력 / 옥수수전분만 다섯 글자라 출력 시 약간의 좌표 변경이 필요함
+        if fishfood_str == '옥수수전분':
+            self.fishfood_display = self.canvas.create_text(925, 640, text=fishfood_str, fill="white", anchor="nw",
+                                                            font=fishfood_font)
+        else:
+            self.fishfood_display = self.canvas.create_text(935, 640, text=fishfood_str, fill="white", anchor="nw",
+                                                            font=fishfood_font)
+
+    # 날짜 디스플레이
+    def update_date_display(self):
+        # 기존 날짜 표시 삭제
+        if self.date_display is not None:
+            self.canvas.delete(self.date_display)
+
+        # 새 날짜 표시 추가
+        date_str = self.current_date.strftime("%Y년\n  %m월")
+        date_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        # 정해진 위치에 텍스트 출력 (60, 600)
+        self.date_display = self.canvas.create_text(60, 600, text=date_str, fill="white", anchor="nw", font=date_font)
+
+
+
+
+    # =========== 비디오 재생 관련 ============
     # 비디오 파일 설정
     def setup_video(self):
         self.video1 = cv2.VideoCapture('video/start_video.mp4')  # 초기 동영상 파일
@@ -550,6 +631,10 @@ class FishingGUI:
                 self.bind_events()  # 입력 이벤트 바인드
                 break
 
+
+
+
+    # =========== 게임 실행 ============
     # 게임 시작 메소드
     def start(self):
         # caught_fish에서 개구리를 제외한 물고기들의 종류를 추출하여 중복을 제거한 후, 리스트로 변환하여 fishbook_fish에 넣는다.
@@ -561,6 +646,7 @@ class FishingGUI:
         self.update_display()  # 디스플레이 업데이트
         while True:
             self.play_video(self.video1)  # start_video 재생
+
 
 # 동작 간 발생하는 error를 핸들링 하기 위해 try except 문 사용, 동작에는 문제없음
 try:

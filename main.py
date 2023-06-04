@@ -38,7 +38,7 @@ class FishingGUI:
         # GUI 및 디스플레이 관련 설정
         self.master = master  # Tkinter의 root 객체를 저장함(화면 구성)
         self.master.title("모여봐요 인하의 숲")  # 창 상단 제목 설정
-        self.canvas = Canvas(self.master, width=1080, height=720)  # 1080x720의 메인 캔버스 생성
+        self.canvas = Canvas(self.master, width=720, height=480)  # 720x480의 메인 캔버스 생성
         self.canvas.pack()  # 캔버스를 화면에 배치
         self.setup_video()  # 비디오 설정 메소드 호출
         self.bind_events()  # 입력 이벤트 바인딩하는 메소드 호출
@@ -255,7 +255,7 @@ class FishingGUI:
     # 도감 창 구현 함수
     def show_fish_catalog(self, event):
         trophy_visible = False  # 트로피 노출 여부 초기화
-        if self.catalog_visible:  # 도감 창이 이미 열려 있는 경우
+        if self.catalog_visible or self.current_video != self.video1:  # 도감 창이 이미 열려 있는 경우 그리고 대기 상태인지 확인
             return
         self.catalog_window = Tk()  # 새로운 tkinter 창 생성
         self.catalog_window.title("물고기 도감")  # 상단 창 이름 설정
@@ -391,7 +391,7 @@ class FishingGUI:
             self.catalog_window.destroy()  # 도감 창을 닫음
             self.catalog_window = None  # 도감 창 변수 초기화
             self.catalog_visible = False  # 도감 창 노출여부 변수 false
-
+            self.start() # 다시 초기화면 호출
 
 
 
@@ -439,10 +439,10 @@ class FishingGUI:
             return
         # 특정 좌표의 범위인지 확인
         # 좌측 상단 터치가 들어왔을 경우
-        if event.x < 100 and event.y < 120:
+        if event.x < 70 and event.y < 80:
             self.show_fish_catalog(event)  # 도감 화면 열기
         # 우측 하단 터치가 들어왔을 경우
-        elif event.x >= 890 and event.y >= 570:
+        elif event.x >= 595 and event.y >= 370:
             # 떡밥 종류 변경
             self.select_next_fish_food()
         # 그 외의 경우 (낚시를 위해 터치했다고 판단)
@@ -485,7 +485,7 @@ class FishingGUI:
             self.update_display()  # 디스플레이 업데이트
             self.save_user_data()  # 유저 데이터 저장
             self.bind_events()  # 입력 이벤트 바인딩
-
+            FishingGUI.start(self)  # 다시 초기 화면(start_video)로 돌아가기 위해 start 함수 호출
 
 
 
@@ -505,26 +505,26 @@ class FishingGUI:
             self.canvas.delete(self.fish_display)
         fish_name, fish_length = self.fish_display_list[-1]  # 물고기 이름과 길이를 받아온다
         fish_str = f'{fish_name}, {fish_length}cm'
-        fish_font = font.Font(family="Verdana", size=12, weight="bold")  # 폰트 설정
+        fish_font = font.Font(family="Verdana", size=9, weight="bold")  # 폰트 설정
         if fish_name != 0 and fish_length != 0:  # 빈 칸일때 예외처리, 문자 길이에 따른 좌표 조절
             if len(fish_str) == 7:
-                self.fish_display = self.canvas.create_text(940, 185, text=fish_str, fill="white", anchor="nw",
+                self.fish_display = self.canvas.create_text(623, 123, text=fish_str, fill="white", anchor="nw",
                                                             font=fish_font)
             elif len(fish_str) == 8:
-                self.fish_display = self.canvas.create_text(931, 185, text=fish_str, fill="white", anchor="nw",
+                self.fish_display = self.canvas.create_text(618, 123, text=fish_str, fill="white", anchor="nw",
                                                             font=fish_font)
             elif len(fish_str) == 9:
-                self.fish_display = self.canvas.create_text(924, 185, text=fish_str, fill="white", anchor="nw",
+                self.fish_display = self.canvas.create_text(613, 123, text=fish_str, fill="white", anchor="nw",
                                                             font=fish_font)
             elif len(fish_str) == 10:
-                self.fish_display = self.canvas.create_text(918, 185, text=fish_str, fill="white", anchor="nw",
+                self.fish_display = self.canvas.create_text(608, 123, text=fish_str, fill="white", anchor="nw",
                                                             font=fish_font)
             else:
-                self.fish_display = self.canvas.create_text(914, 185, text=fish_str, fill="white", anchor="nw",
+                self.fish_display = self.canvas.create_text(603, 123, text=fish_str, fill="white", anchor="nw",
                                                             font=fish_font)
         else:
-            self.fish_display = self.canvas.create_text(909, 185, text='아직 잡은 물고기가 없다..', fill="white", anchor="nw",
-                                                        font=font.Font(family="Verdana", size=10, weight="bold"))
+            self.fish_display = self.canvas.create_text(602, 123, text='잡은 물고기가 없다..', fill="white", anchor="nw",
+                                                        font=font.Font(family="Verdana", size=8, weight="bold"))
 
     # 돈 디스플레이
     def update_money_display(self):
@@ -534,28 +534,28 @@ class FishingGUI:
 
         # 새 돈 표시 추가
         money_str = int(self.total_money)
-        money_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        money_font = font.Font(family="Verdana", size=12, weight="bold")  # 폰트 설정
         # 정해진 위치에 텍스트 출력 / format을 이용해 세 자리마다 끊어줌 / 돈 자리수가 늘수록 좌표를 알맞게 조금씩 변경해줌
         if money_str <= 9:
-            self.money_display = self.canvas.create_text(970, 90, text=money_str, fill="white", anchor="nw",
+            self.money_display = self.canvas.create_text(648, 58, text=money_str, fill="white", anchor="nw",
                                                          font=money_font)
         elif money_str <= 99:
-            self.money_display = self.canvas.create_text(965, 90, text=money_str, fill="white", anchor="nw",
+            self.money_display = self.canvas.create_text(643, 58, text=money_str, fill="white", anchor="nw",
                                                          font=money_font)
         elif money_str <= 999:
-            self.money_display = self.canvas.create_text(955, 90, text=money_str, fill="white", anchor="nw",
+            self.money_display = self.canvas.create_text(637, 58, text=money_str, fill="white", anchor="nw",
                                                          font=money_font)
         elif money_str <= 9999:
-            self.money_display = self.canvas.create_text(945, 90, text=format(money_str, ','), fill="white",
+            self.money_display = self.canvas.create_text(630, 58, text=format(money_str, ','), fill="white",
                                                          anchor="nw", font=money_font)
         elif money_str <= 99999:
-            self.money_display = self.canvas.create_text(935, 90, text=format(money_str, ','), fill="white",
+            self.money_display = self.canvas.create_text(624, 58, text=format(money_str, ','), fill="white",
                                                          anchor="nw", font=money_font)
         elif money_str <= 999999:
-            self.money_display = self.canvas.create_text(925, 90, text=format(money_str, ','), fill="white",
+            self.money_display = self.canvas.create_text(618, 58, text=format(money_str, ','), fill="white",
                                                          anchor="nw", font=money_font)
         else:
-            self.money_display = self.canvas.create_text(915, 90, text=format(money_str, ','), fill="white",
+            self.money_display = self.canvas.create_text(611, 58, text=format(money_str, ','), fill="white",
                                                          anchor="nw", font=money_font)
 
     # 떡밥 디스플레이
@@ -564,13 +564,13 @@ class FishingGUI:
         if self.fishfood_display is not None:
             self.canvas.delete(self.fishfood_display)
         fishfood_str = self.fish_food_list[self.fish_food_index].name
-        fishfood_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        fishfood_font = font.Font(family="Verdana", size=12, weight="bold")  # 폰트 설정
         # 정해진 위치에 텍스트 출력 / 옥수수전분만 다섯 글자라 출력 시 약간의 좌표 변경이 필요함
         if fishfood_str == '옥수수전분':
-            self.fishfood_display = self.canvas.create_text(925, 640, text=fishfood_str, fill="white", anchor="nw",
+            self.fishfood_display = self.canvas.create_text(616, 427, text=fishfood_str, fill="white", anchor="nw",
                                                             font=fishfood_font)
         else:
-            self.fishfood_display = self.canvas.create_text(935, 640, text=fishfood_str, fill="white", anchor="nw",
+            self.fishfood_display = self.canvas.create_text(623, 427, text=fishfood_str, fill="white", anchor="nw",
                                                             font=fishfood_font)
 
     # 날짜 디스플레이
@@ -581,9 +581,9 @@ class FishingGUI:
 
         # 새 날짜 표시 추가
         date_str = self.current_date.strftime("%Y년\n  %m월")
-        date_font = font.Font(family="Verdana", size=18, weight="bold")  # 폰트 설정
+        date_font = font.Font(family="Verdana", size=12, weight="bold")  # 폰트 설정
         # 정해진 위치에 텍스트 출력 (60, 600)
-        self.date_display = self.canvas.create_text(60, 600, text=date_str, fill="white", anchor="nw", font=date_font)
+        self.date_display = self.canvas.create_text(43, 397, text=date_str, fill="white", anchor="nw", font=date_font)
 
 
 
@@ -600,28 +600,35 @@ class FishingGUI:
 
     # 동영상 재생 기능
     def play_video(self, video):
+        self.imgtk = None  # 변환할 이미지를 보관할 곳
         self.click_allowed = True  # 클릭 허용을 true로 설정
         self.current_video = video  # 현재 재생되는 비디오는 current_video에 담기게 됨
         video.set(cv2.CAP_PROP_POS_FRAMES, 0)  # 비디오의 프레임 위치를 처음으로 설정
-        fps = video.get(cv2.CAP_PROP_FPS)  # 비디오의 초당 프레임 수를 가져온다
-        frame_delay = 0.13 / fps  # 각 프레임 간의 딜레이를 주기 위해 frame_delay 변수를 만든다
-        # (0.13은 테스트하면서 결정한 값이고 변경 될 수 있음)
+        fps = video.get(cv2.CAP_PROP_FPS)  # 비디오의 초당 프레임 수를 가져온다, 30fps
         while True:
             ret, frame = video.read()  # 비디오에서 프레임을 읽어옴
             if not ret:
                 video.set(cv2.CAP_PROP_POS_FRAMES, 0)  # 비디오의 프레임 위치를 처음으로 설정
                 break
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)  # 프레임의 컬러 스페이스를 BGR에서 RGBA로 변환
-            frame = cv2.resize(frame, (1080, 720))  # 프레임의 크기를 1080, 720으로 조정
+            frame = cv2.resize(frame, (720, 480))  # 프레임의 크기를 720, 480으로 조정
             img = Image.fromarray(frame)  # 프레임을 이미지로 변환한다
-            imgtk = ImageTk.PhotoImage(image=img)  # 이미지를 Tkinter 라이브러리에서 사용할 수 있는 형식으로 변환
+            if self.imgtk is None:  # 이미지가 아무것도 없는 경우(처음)
+                imgtk = ImageTk.PhotoImage(image=img)  # 이미지를 Tkinter 라이브러리에서 사용할 수 있는 형식으로 변환
+            else:  # 이미 이미지가 있는 경우
+                imgtk.paste(img)  # 그 위에 덮어서 재생
+
+
             self.canvas.create_image(0, 0, image=imgtk, anchor=NW)  # 캔버스에 변환한 이미지를 추가한다
             if self.current_video != self.video5:  # 현재 비디오가 intro 영상이 아니라면
                 # intro 영상에서는 돈, 떡밥, 날짜 정보가 나와서는 안되기 때문
                 self.update_display()  # 디스플레이 업데이트
             # self.master.update_idletasks()  # GUI 업데이트
             self.canvas.update()  # 캔버스 업데이트
-            time.sleep(frame_delay)  # 위에서 설정한 프레임 딜레이 시간만큼 대기
+            # 프레임 처리 로직
+            time.sleep(0.005)  # 위에서 설정한 프레임 딜레이 시간만큼 대기
+            del frame  # 비디오 재생에 사용했던 frame 삭제
+            del imgtk  # 비디오 재생에 사용했던 imgtk 삭제 (메모리 부하를 줄이기 위함)
 
             # 비디오가 start_video(초기 비디오) 인 상태에서 돈이 999999 벨 이상이고, 엔딩 동영상이 한번도 플레이 된 적 없다면
             if self.current_video == self.video1 and self.total_money >= 999999 and not self.ending_video_played:
@@ -630,9 +637,6 @@ class FishingGUI:
                 self.play_video(self.video6)  # 엔딩 영상을 재생
                 self.bind_events()  # 입력 이벤트 바인드
                 break
-
-
-
 
     # =========== 게임 실행 ============
     # 게임 시작 메소드
@@ -644,6 +648,8 @@ class FishingGUI:
         # 그래서 첫 시점부터 반영해주었다.
         self.fishbook_fish = list(set([fish[0] for fish in self.caught_fish if fish[0] != "개구리"]))
         self.update_display()  # 디스플레이 업데이트
+
+        
         while True:
             self.play_video(self.video1)  # start_video 재생
 
@@ -656,4 +662,4 @@ try:
         app.show_initial_screen()  # 초기화면 호출
         root.mainloop()  # tkinter 이벤트 루프 실행
 except Exception as e:
-    pass
+     pass
